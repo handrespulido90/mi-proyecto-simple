@@ -1,16 +1,34 @@
 from flask import Flask, render_template, request, redirect
 import psycopg2
 import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 app = Flask(__name__)
 
-# Obtener la URL de la base de datos desde una variable de entorno
+# Obtener la URL de la base de datos desde .env
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db_connection():
     """Conecta a la base de datos PostgreSQL en Render"""
     conn = psycopg2.connect(DATABASE_URL, sslmode="require")
     return conn
+
+def init_db():
+    """Crea la tabla si no existe"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id SERIAL PRIMARY KEY,
+            nombre TEXT NOT NULL,
+            edad INTEGER NOT NULL
+        );
+    ''')
+    conn.commit()
+    conn.close()
 
 @app.route('/')
 def index():
@@ -35,4 +53,5 @@ def agregar_usuario():
     return redirect('/')
 
 if __name__ == '__main__':
+    init_db()  # Asegurar que la tabla exista antes de iniciar la aplicación
     app.run(debug=True)
